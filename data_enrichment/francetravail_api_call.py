@@ -192,9 +192,8 @@ def populate_database_with_offres(offres, db):
     competence_repository = CompetenceRepository(db)
     for offre in offres:
         rome_code = offre.get("romeCode")
-        rome = None
         if rome_code:
-            rome = rome_repository.get_or_create(rome_code, offre.get("romeLibelle"))
+            rome_repository.get_or_create(rome_code, offre.get("romeLibelle"))
 
         offre_model = OffreModel(
             francetravail_id=offre["id"],
@@ -206,8 +205,6 @@ def populate_database_with_offres(offres, db):
             appellation_libelle=offre.get("appellationlibelle").strip() if offre.get("appellationlibelle") else None,
             entreprise_nom=offre.get("entreprise", {}).get("nom").strip() if offre.get("entreprise", {}).get("nom") else None,
         )
-        if rome is not None:
-            offre_model.rome = rome
 
         saved_offre = offre_repository.create_offre(offre_model)
 
