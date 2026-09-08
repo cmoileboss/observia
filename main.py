@@ -13,6 +13,9 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from logging_config import configure_logging
 from rate_limiting import limiter
+from postgres_connection import Base, engine, SESSION_LOCAL
+from services.auth_service import AuthService
+from enums.role_enum import Role
 
 from routers.auth_router import router as auth_router
 from routers.competences_router import router as competences_router
@@ -60,10 +63,28 @@ if missing_vars:
     )
 
 
+def _create_admin_user_if_missing() -> None:
+    """Crée l'utilisateur admin défini dans le .env s'il n'existe pas déjà."""
+    admin_email = os.getenv("ADMIN_EMAIL")
+    admin_password = os.getenv("ADMIN_PASSWORD")
+    db = SESSION_LOCAL()
+    try:
+        auth_service = AuthService(db)
+        if auth_service.user_repository.get_by_email(admin_email) is None:
+            auth_service.create_user(admin_email, admin_password, role=Role.ADMIN)
+            logger.info("Utilisateur admin créé à partir des identifiants du .env.")
+        else:
+            logger.info("Utilisateur admin déjà existant.")
+    finally:
+        db.close()
+
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """Gère le cycle de vie de l'application FastAPI."""
     logger.info("Les variables d'environnement %s sont bien initialisées.", ", ".join(MANDATORY_ENV_VARS))
+    Base.metadata.create_all(bind=engine)
+    _create_admin_user_if_missing()
     yield
 
 
