@@ -1,9 +1,12 @@
 # Observia
 
-## Prérequis
+API FastAPI qui agrège et croise les offres d'emploi France Travail, les formations et les codes ROME afin d'exposer des indicateurs sur l'emploi et la formation en France.
+
+## Préalables
 
 - Python 3.x
 - Git
+- PostgreSQL (une base nommée selon `DATABASE_NAME` doit être accessible)
 
 ## Installation
 
@@ -68,6 +71,15 @@ python main.py
 
 L'API est alors accessible sur `http://localhost:8000`.
 
+La documentation interactive est générée automatiquement par FastAPI :
+- Swagger UI : `http://localhost:8000/docs`
+- ReDoc : `http://localhost:8000/redoc`
+
+### Initialisation des données
+
+Au premier démarrage, la base est créée mais reste vide (à l'exception de l'utilisateur admin). Il faut appeler la route `POST /api/populatedb` (en tant qu'admin) pour lancer le pipeline d'import et d'enrichissement des données.  
+Si vous supprimez l'utilisateur admin, il faudra relancer l'API.
+
 ## Routes exposées
 
 ### Authentification (`/auth`)
@@ -104,4 +116,12 @@ Les ressources suivantes exposent chacune les routes `GET /<ressource>/` (liste 
 | Codes ROME | `/rome-codes` |
 
 Toutes ces routes nécessitent d'être authentifié (cookie `access_token`).
+
+## Limitation de débit
+
+Les routes sont soumises à une limite d'appels (`slowapi`), 30 par minutes sur la plupart des lectures et 5 par minutes sur l'inscription. La limite est appliquée par utilisateur authentifié (via le JWT) ou, à défaut, par adresse IP.
+
+## Logs
+
+Les logs sont écrits à la fois sur la console et dans un fichier tournant `logs/app.log` (5 fichiers de sauvegarde max, 1 Mo chacun). Le niveau de log et le chemin du fichier sont configurables via les variables d'environnement `LOG_LEVEL` (défaut : `INFO`) et `LOG_FILE` (défaut : `logs/app.log`), voir [logging_config.py](logging_config.py).
 
